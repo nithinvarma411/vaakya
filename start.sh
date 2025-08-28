@@ -35,4 +35,4 @@ $OPEN_CMD index.html
 echo "✅ Vaakya is now running!"
 echo "   - Web interface: index.html"
 echo "   - API documentation: http://localhost:8000/docs"
-echo "   - Local Whisper processing (no Docker required)"
+echo "   - Local Faster-Whisper processing (no Docker required)"
