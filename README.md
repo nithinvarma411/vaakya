@@ -27,13 +27,25 @@
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    uv pip install -r requirements.txt
    ```
+2. Install ffmpeg:
+   ```bash
+   # On macOS:
+   brew install ffmpeg
+   
+   # On Ubuntu/Debian:
+   sudo apt-get install ffmpeg
+   
+   # On Windows:
+   winget install Gyan.FFmpeg
+   uv pip install ffmpeg-python
+   ```
 
-2. Start the FastAPI server (in a new terminal):
+3. Start the FastAPI server (in a new terminal):
    ```bash
    ./run_server.sh
    ```
 
-3. Open `index.html` in your browser to use the web interface
+4. Open `index.html` in your browser to use the web interface
 
 ## API Endpoints
 
