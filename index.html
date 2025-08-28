@@ -1,184 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Live Speech Transcription</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px 0;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 0 10px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+      #stopBtn {
+        background-color: #f44336;
+      }
+      #stopBtn:hover {
+        background-color: #da190b;
+      }
+      .status {
+        text-align: center;
+        margin: 20px 0;
+        font-weight: bold;
+      }
+      #transcription {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 20px;
+        min-height: 100px;
+        margin-top: 20px;
+      }
+      .recording {
+        color: #f44336;
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          opacity: 1;
         }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        50% {
+          opacity: 0.5;
         }
-        h1 {
-            color: #333;
-            text-align: center;
+        100% {
+          opacity: 1;
         }
-        .controls {
-            text-align: center;
-            margin: 20px 0;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 0 10px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #stopBtn {
-            background-color: #f44336;
-        }
-        #stopBtn:hover {
-            background-color: #da190b;
-        }
-        .status {
-            text-align: center;
-            margin: 20px 0;
-            font-weight: bold;
-        }
-        #transcription {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 20px;
-            min-height: 100px;
-            margin-top: 20px;
-        }
-        .recording {
-            color: #f44336;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>🎙️ Live Speech Transcription</h1>
-        <p style="text-align: center;">Click "Start Recording" and speak into your microphone</p>
-        
-        <div class="controls">
-            <button id="startBtn">Start Recording</button>
-            <button id="stopBtn" disabled>Stop Recording</button>
-        </div>
-        
-        <div class="status" id="status">Ready to record</div>
-        
-        <div id="transcription">
-            <h3>Transcription:</h3>
-            <p id="transcriptText">Your transcription will appear here...</p>
-        </div>
+      <h1>🎙️ Live Speech Transcription</h1>
+      <p style="text-align: center">
+        Click "Start Recording" and speak into your microphone
+      </p>
+
+      <div class="controls">
+        <button id="startBtn">Start Recording</button>
+      </div>
+
+      <div class="status" id="status">Ready to record</div>
+
+      <div id="transcription">
+        <h3>Transcription:</h3>
+        <p id="transcriptText">Your transcription will appear here...</p>
+      </div>
     </div>
 
     <script>
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
+      let mediaRecorder;
+      let audioChunks = [];
+      let isRecording = false;
 
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const statusEl = document.getElementById('status');
-        const transcriptText = document.getElementById('transcriptText');
+      const startBtn = document.getElementById("startBtn");
+      const statusEl = document.getElementById("status");
+      const transcriptText = document.getElementById("transcriptText");
 
-        // Request microphone access
-        async function startRecording() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-                
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    await sendAudioForTranscription(audioBlob);
-                    stream.getTracks().forEach(track => track.stop());
-                };
-                
-                mediaRecorder.start();
-                isRecording = true;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                statusEl.textContent = 'Recording... Speak now';
-                statusEl.className = 'recording';
-                transcriptText.textContent = 'Listening...';
-                
-                // Stop recording after 5 seconds for demo purposes
-                setTimeout(() => {
-                    if (isRecording) {
-                        stopRecording();
-                    }
-                }, 5000);
-                
-            } catch (error) {
-                console.error('Error accessing microphone:', error);
-                statusEl.textContent = 'Error: Could not access microphone';
-                statusEl.className = '';
+      let silenceStart = null;
+      const silenceDelay = 1000; // ms of silence to trigger auto-stop
+      let audioContext, analyser, microphone, javascriptNode;
+
+      // Request microphone access
+      async function startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          silenceStart = null;
+
+          // Web Audio graph for silence detection
+          audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          microphone = audioContext.createMediaStreamSource(stream);
+          analyser = audioContext.createAnalyser();
+          analyser.fftSize = 2048;
+          microphone.connect(analyser);
+          javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+          analyser.connect(javascriptNode);
+          javascriptNode.connect(audioContext.destination);
+
+          javascriptNode.onaudioprocess = function () {
+            const array = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(array);
+            const isSpeaking = array.some((v) => v > 20); // can tune threshold
+
+            if (isSpeaking) {
+              silenceStart = null; // Reseting silence timer if someone is speaking
+            } else {
+              if (!silenceStart) silenceStart = Date.now();
+              if (Date.now() - silenceStart > silenceDelay) {
+                if (isRecording) stopRecording();
+              }
             }
-        }
+          };
 
-        function stopRecording() {
-            if (mediaRecorder && isRecording) {
-                mediaRecorder.stop();
-                isRecording = false;
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                statusEl.textContent = 'Processing audio...';
-                statusEl.className = '';
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = async () => {
+            // cleaning up
+            javascriptNode.disconnect();
+            analyser.disconnect();
+            microphone.disconnect();
+            audioContext.close();
+            stream.getTracks().forEach((track) => track.stop());
+
+            // sending audio for transcription  
+            const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+            await sendAudioForTranscription(audioBlob);
+            stream.getTracks().forEach((track) => track.stop());
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          startBtn.disabled = true;
+          statusEl.textContent = "Recording... Speak now";
+          statusEl.className = "recording";
+          transcriptText.textContent = "Listening...";
+
+          // Stop recording after 5 seconds for demo purposes
+          setTimeout(() => {
+            if (isRecording) {
+              stopRecording();
             }
+          }, 5000);
+        } catch (error) {
+          console.error("Error accessing microphone:", error);
+          statusEl.textContent = "Error: Could not access microphone";
+          statusEl.className = "";
         }
+      }
 
-        async function sendAudioForTranscription(audioBlob) {
-            try {
-                const formData = new FormData();
-                formData.append('audio', audioBlob, 'recording.wav');
-                
-                const response = await fetch('http://localhost:8000/transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    transcriptText.textContent = data.transcription || "Transcription completed but no text returned";
-                    statusEl.textContent = 'Transcription complete!';
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || 'Transcription failed');
-                }
-            } catch (error) {
-                console.error('Transcription error:', error);
-                transcriptText.textContent = `Error: ${error.message}`;
-                statusEl.textContent = 'Transcription failed';
-            }
+      function stopRecording() {
+        if (mediaRecorder && isRecording) {
+          mediaRecorder.stop();
+          isRecording = false;
+          startBtn.disabled = false;
+          statusEl.textContent = "Processing audio...";
+          statusEl.className = "";
         }
+      }
 
-        // Event listeners
-        startBtn.addEventListener('click', startRecording);
-        stopBtn.addEventListener('click', stopRecording);
+      async function sendAudioForTranscription(audioBlob) {
+        try {
+          const formData = new FormData();
+          formData.append("audio", audioBlob, "recording.wav");
+
+          const response = await fetch("http://localhost:8000/transcribe", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            transcriptText.textContent =
+              data.transcription ||
+              "Transcription completed but no text returned";
+            statusEl.textContent = "Transcription complete!";
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Transcription failed");
+          }
+        } catch (error) {
+          console.error("Transcription error:", error);
+          transcriptText.textContent = `Error: ${error.message}`;
+          statusEl.textContent = "Transcription failed";
+        }
+      }
+
+      // Event listeners
+      startBtn.addEventListener("click", startRecording);
     </script>
-</body>
+  </body>
 </html>
