@@ -27,7 +27,6 @@
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    uv pip install -r requirements.txt
    ```
-
 2. Install ffmpeg:
    ```bash
    # On macOS:
@@ -37,7 +36,8 @@
    sudo apt-get install ffmpeg
    
    # On Windows:
-   # Download from https://ffmpeg.org/download.html
+   winget install Gyan.FFmpeg
+   uv pip install ffmpeg-python
    ```
 
 3. Start the FastAPI server (in a new terminal):
@@ -101,7 +101,6 @@ vaakya/
 │   │   ├── config/
 │   │   │   ├── __init__.py
 │   │   │   └── settings.py     # Configuration settings
-│   │   ├── models/
 │   │   ├── services/
 │   │   │   ├── __init__.py
 │   │   │   ├── audio_processor.py     # Audio processing with ffmpeg
