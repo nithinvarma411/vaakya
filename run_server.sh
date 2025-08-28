@@ -5,7 +5,11 @@ cd "$(dirname "$0")"
 
 # Activate virtual environment if it exists
 if [ -d ".venv" ]; then
-    source .venv/bin/activate
+    if [[ "$OSTYPE" == "darwin"* ]] || [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        source .venv/bin/activate
+    elif [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then
+        source .venv/Scripts/activate
+    fi
 fi
 
 # Set Python path to include the project root
