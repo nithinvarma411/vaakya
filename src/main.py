@@ -3,19 +3,16 @@ import os
 from app.services.transcription_service import TranscriptionService
 
 async def main():
-    # Initialize add run the transciption service 
-
+    # Initialize and run the transcription service 
     service = TranscriptionService()
+    
     # Need Application logic here 
-    # For now, just testing connection
-    try:
-        # This will test the connection without sending audio
-        await service.client.connect()
-        print("Connection to Wyoming server successful.")
-        await service.client.close()
-    except Exception as e:
-        print(f"Failed to connect to Wyoming server: {e}")
-
+    # For now, just testing the service initialization
+    print("Transcription service initialized successfully.")
+    
+    # Example usage (uncomment when you have an audio file to test):
+    # transcription = await service.transcribe_file("path/to/audio/file.wav")
+    # print(f"Transcription: {transcription}")
 
 if __name__ == "__main__":
     asyncio.run(main())
