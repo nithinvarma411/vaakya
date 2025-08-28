@@ -3,7 +3,7 @@
 # Run the FastAPI server with uvicorn
 cd "$(dirname "$0")"
 
-# Activate virtual environment if it exists
+# Activate virtual environment, works on both linux and windows
 if [ -d ".venv" ]; then
     if [[ "$OSTYPE" == "darwin"* ]] || [[ "$OSTYPE" == "linux-gnu"* ]]; then
         source .venv/bin/activate
