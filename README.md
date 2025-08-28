@@ -28,24 +28,12 @@
    uv pip install -r requirements.txt
    ```
 
-2. Install ffmpeg:
-   ```bash
-   # On macOS:
-   brew install ffmpeg
-   
-   # On Ubuntu/Debian:
-   sudo apt-get install ffmpeg
-   
-   # On Windows:
-   # Download from https://ffmpeg.org/download.html
-   ```
-
-3. Start the FastAPI server (in a new terminal):
+2. Start the FastAPI server (in a new terminal):
    ```bash
    ./run_server.sh
    ```
 
-4. Open `index.html` in your browser to use the web interface
+3. Open `index.html` in your browser to use the web interface
 
 ## API Endpoints
 
@@ -101,7 +89,6 @@ vaakya/
 │   │   ├── config/
 │   │   │   ├── __init__.py
 │   │   │   └── settings.py     # Configuration settings
-│   │   ├── models/
 │   │   ├── services/
 │   │   │   ├── __init__.py
 │   │   │   ├── audio_processor.py     # Audio processing with ffmpeg
