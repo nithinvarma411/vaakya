@@ -1,6 +1,6 @@
 import asyncio
 from typing import Optional
-import whisper
+from faster_whisper import WhisperModel
 import tempfile
 import os
 from .audio_processor import AudioProcessor
@@ -19,16 +19,17 @@ class TranscriptionService:
         if not hasattr(self, 'initialized'):
             self.audio_processor = AudioProcessor()
             # Load the Whisper model once during initialization
-            print("Loading Whisper base model (multilingual)...")
-            # Explicitly use FP32 to avoid warnings on CPU and specify download location
+            print("Loading Faster-Whisper base model (multilingual)...")
+            # Use faster-whisper with CPU optimization
             if TranscriptionService._model is None:
-                TranscriptionService._model = whisper.load_model("base", device="cpu")
+                # Using CPU with int8 quantization for better performance
+                TranscriptionService._model = WhisperModel("base", device="cpu", compute_type="int8")
             self.model = TranscriptionService._model
-            print("Whisper base model loaded successfully! (Multilingual)")
+            print("Faster-Whisper base model loaded successfully! (Multilingual)")
             self.initialized = True
 
     async def transcribe_file(self, file_path: str) -> Optional[str]:
-        """Transcribe an audio file using local Whisper"""
+        """Transcribe an audio file using Faster-Whisper"""
         try:
             # Convert the audio file to proper WAV format
             with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
@@ -61,17 +62,14 @@ class TranscriptionService:
         """Synchronous transcription method to run in thread pool"""
         try:
             print(f"Transcribing file: {file_path}")
-            # Transcribe the audio file with FP32 explicitly
+            # Transcribe the audio file using faster-whisper
             # The base model is multilingual and will auto-detect language
-            result = self.model.transcribe(file_path, fp16=False)
-            transcription = result["text"]
+            segments, info = self.model.transcribe(file_path, beam_size=5)
+            # Collect all segments into a single transcription
+            transcription = " ".join([segment.text for segment in segments])
             print(f"Transcription completed: {transcription}")
-            # Ensure transcription is a string before calling strip()
-            if isinstance(transcription, str):
-                return transcription.strip()
-            else:
-                # Handle case where transcription might be a list or other type
-                return str(transcription).strip()
+            print(f"Detected language: {info.language}")
+            return transcription.strip()
         except Exception as e:
             print(f"Error in synchronous transcription: {e}")
             raise

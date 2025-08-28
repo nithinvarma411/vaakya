@@ -1,10 +1,10 @@
 
 ## Current Features
-- File-based transcription with local Whisper model
+- File-based transcription with local Faster-Whisper model
 - Web interface for live audio recording and transcription
 - FastAPI backend with automatic API documentation
 - Fully local processing - no external dependencies or internet required
-- Optimized for CPU with FP32 precision to avoid warnings
+- Optimized for CPU with int8 quantization for better performance
 
 ## Architecture
 ```
@@ -67,15 +67,22 @@ curl -X POST "http://localhost:8000/transcribe" -F "audio=@your_audio_file.wav"
 
 ## Model Information
 
-The application uses OpenAI's Whisper model for transcription:
+The application uses Faster-Whisper (a reimplementation of OpenAI's Whisper) for transcription:
 - Model: `base` (better accuracy than tiny, still good for real-time)
-- Precision: FP32 (avoids CPU warnings)
+- Compute type: int8 (quantized for better CPU performance)
 - Multilingual support for speech recognition, translation, and language identification
 
 To change the model, modify this line in `src/app/services/transcription_service.py`:
 ```python
-self.model = whisper.load_model("base", device="cpu")  # Change to "small", "medium", or "large" for better accuracy
+TranscriptionService._model = WhisperModel("base", device="cpu", compute_type="int8")  # Change to "small", "medium", or "large" for better accuracy
 ```
+
+Available models: "tiny", "base", "small", "medium", "large-v1", "large-v2", "large-v3"
+
+For even better performance on compatible hardware:
+- Use `device="cuda"` for NVIDIA GPU acceleration
+- Use `compute_type="float16"` or `compute_type="int8_float16"` for GPU
+
 
 ## Project Structure
 ```
