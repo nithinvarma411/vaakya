@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Speech Transcription</title>
+    <title>Vaakya - Voice Assistant</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -66,30 +66,70 @@
             color: #f44336;
             animation: pulse 1.5s infinite;
         }
+        .listening {
+            color: #2196F3;
+            animation: pulse 1s infinite;
+        }
+        .wake-word-detected {
+            color: #FF9800;
+            animation: pulse 0.5s infinite;
+        }
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
             100% { opacity: 1; }
         }
+        .wake-word-info {
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+            color: #666;
+        }
+        .sound-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            display: inline-block;
+            margin-left: 10px;
+            animation: soundPulse 1s infinite;
+        }
+        @keyframes soundPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎙️ Live Speech Transcription</h1>
-        <p style="text-align: center;">Click "Start Recording" and speak into your microphone</p>
+        <h1>🎙️ Vaakya Voice Assistant</h1>
+        <p style="text-align: center;">Say "Hey Vaakya" to start recording automatically</p>
+        
+        <div class="wake-word-info">
+            <span id="wakeWordStatus">Listening for wake word...</span>
+            <span id="soundIndicator" class="sound-indicator" style="display: none;"></span>
+        </div>
         
         <div class="controls">
             <button id="startBtn">Start Recording</button>
             <button id="stopBtn" disabled>Stop Recording</button>
         </div>
         
-        <div class="status" id="status">Ready to record</div>
+        <div class="status" id="status">Ready - Say "Hey Vaakya"</div>
         
         <div id="transcription">
             <h3>Transcription:</h3>
             <p id="transcriptText">Your transcription will appear here...</p>
         </div>
     </div>
+
+    <audio id="wakeSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66h极地" type="audio/wav">
+    </audio>
+    <audio id="startSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66hVFApGn+DxvGkeBzOH0/LMeSwFJHfH79WQQAoUXrTp66h极地" type="audio/wav">
+    </audio>
 
     <script>
         let mediaRecorder;
@@ -101,7 +141,6 @@
         const statusEl = document.getElementById('status');
         const transcriptText = document.getElementById('transcriptText');
 
-        // Request microphone access
         async function startRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -126,7 +165,6 @@
                 statusEl.className = 'recording';
                 transcriptText.textContent = 'Listening...';
                 
-                // Stop recording after 5 seconds for demo purposes
                 setTimeout(() => {
                     if (isRecording) {
                         stopRecording();
@@ -176,9 +214,161 @@
             }
         }
 
-        // Event listeners
+        let recognition = null;
+        let isListeningForWakeWord = false;
+        const wakeWordStatus = document.getElementById('wakeWordStatus');
+        const soundIndicator = document.getElementById('soundIndicator');
+        const wakeSound = document.getElementById('wakeSound');
+        const startSound = document.getElementById('startSound');
+
+        function initWakeWordDetection() {
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+
+                recognition.onresult = function(event) {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            transcript += event.results[i][0].transcript.toLowerCase();
+                        }
+                    }
+                    
+                    if (transcript.includes('hey vaakya') || transcript.includes('hey vakaya')) {
+                        wakeWordDetected();
+                    }
+                    
+                
+                    if (transcript.trim().length > 0) {
+                        soundIndicator.style.display = 'inline-block';
+                    } else {
+                        soundIndicator.style.display = 'none';
+                    }
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    if (event.error === 'no-speech') {
+                        soundIndicator.style.display = 'none';
+                    }
+                };
+
+                recognition.onend = function() {
+                    if (isListeningForWakeWord) {
+                        setTimeout(() => {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                console.error('Failed to restart recognition:', e);
+                            }
+                        }, 100);
+                    }
+                };
+
+                startWakeWordDetection();
+            } else {
+                wakeWordStatus.textContent = 'Speech recognition not supported in this browser';
+                console.warn('Speech recognition API not available');
+            }
+        }
+
+        function startWakeWordDetection() {
+            if (recognition) {
+                try {
+                    recognition.start();
+                    isListeningForWakeWord = true;
+                    wakeWordStatus.textContent = 'Listening for wake word...';
+                    wakeWordStatus.className = 'listening';
+                } catch (e) {
+                    console.error('Failed to start speech recognition:', e);
+                }
+            }
+        }
+
+        function stopWakeWordDetection() {
+            if (recognition) {
+                try {
+                    recognition.stop();
+                    isListeningForWakeWord = false;
+                    wakeWordStatus.textContent = 'Wake word detection stopped';
+                    wakeWordStatus.className = '';
+                } catch (e) {
+                    console.error('Failed to stop speech recognition:', e);
+                }
+            }
+        }
+
+        function wakeWordDetected() {
+            wakeSound.currentTime = 0;
+            wakeSound.play().catch(e => console.log('Audio play failed:', e));
+            
+            wakeWordStatus.textContent = 'Wake word detected!';
+            wakeWordStatus.className = 'wake-word-detected';
+            
+            setTimeout(() => {
+                startRecording();
+                startSound.currentTime = 0;
+                startSound.play().catch(e => console.log('Audio play failed:', e));
+                
+                setTimeout(() => {
+                    if (!isRecording) {
+                        wakeWordStatus.textContent = 'Listening for wake word...';
+                        wakeWordStatus.className = 'listening';
+                    }
+                }, 2000);
+            }, 500);
+        }
+
+        function initVoiceActivityDetection() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(function(stream) {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const analyser = audioContext.createAnalyser();
+                        const microphone = audioContext.createMediaStreamSource(stream);
+                        const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+
+                        analyser.smoothingTimeConstant = 0.8;
+                        analyser.fftSize = 1024;
+
+                        microphone.connect(analyser);
+                        analyser.connect(scriptProcessor);
+                        scriptProcessor.connect(audioContext.destination);
+
+                        scriptProcessor.onaudioprocess = function() {
+                            const array = new Uint8Array(analyser.frequencyBinCount);
+                            analyser.getByteFrequencyData(array);
+                            let values = 0;
+
+                            for (let i = 0; i < array.length; i++) {
+                                values += array[i];
+                            }
+
+                            const average = values / array.length;
+                            
+                            if (average > 10) {
+                                soundIndicator.style.display = 'inline-block';
+                            } else {
+                                soundIndicator.style.display = 'none';
+                            }
+                        };
+                    })
+                    .catch(function(err) {
+                        console.error('Voice activity detection error:', err);
+                    });
+            }
+        }
+
         startBtn.addEventListener('click', startRecording);
         stopBtn.addEventListener('click', stopRecording);
+
+        window.addEventListener('load', function() {
+            initWakeWordDetection();
+            initVoiceActivityDetection();
+        });
     </script>
 </body>
 </html>
