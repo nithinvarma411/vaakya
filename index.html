@@ -308,17 +308,13 @@
             wakeWordStatus.textContent = 'Wake word detected!';
             wakeWordStatus.className = 'wake-word-detected';
             
+            // Stop wake word detection before starting recording
+            stopWakeWordDetection();
+            
             setTimeout(() => {
                 startRecording();
                 startSound.currentTime = 0;
                 startSound.play().catch(e => console.log('Audio play failed:', e));
-                
-                setTimeout(() => {
-                    if (!isRecording) {
-                        wakeWordStatus.textContent = 'Listening for wake word...';
-                        wakeWordStatus.className = 'listening';
-                    }
-                }, 2000);
             }, 500);
         }
 
