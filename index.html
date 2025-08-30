@@ -143,21 +143,25 @@
 
         async function startRecording() {
             try {
+                console.log('startRecording called');
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
                 
                 mediaRecorder.ondataavailable = event => {
+                    console.log('ondataavailable event fired');
                     audioChunks.push(event.data);
                 };
                 
                 mediaRecorder.onstop = async () => {
+                    console.log('mediaRecorder stopped');
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                     await sendAudioForTranscription(audioBlob);
                     stream.getTracks().forEach(track => track.stop());
                 };
                 
                 mediaRecorder.start();
+                console.log('mediaRecorder started');
                 isRecording = true;
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
@@ -167,6 +171,7 @@
                 
                 setTimeout(() => {
                     if (isRecording) {
+                        console.log('Timeout reached, stopping recording');
                         stopRecording();
                     }
                 }, 5000);
@@ -180,6 +185,7 @@
 
         function stopRecording() {
             if (mediaRecorder && isRecording) {
+                console.log('stopRecording called');
                 mediaRecorder.stop();
                 isRecording = false;
                 startBtn.disabled = false;
@@ -191,6 +197,7 @@
 
         async function sendAudioForTranscription(audioBlob) {
             try {
+                console.log('sendAudioForTranscription called');
                 const formData = new FormData();
                 formData.append('audio', audioBlob, 'recording.wav');
                 
@@ -201,6 +208,7 @@
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Transcription received:', data.transcription);
                     transcriptText.textContent = data.transcription || "Transcription completed but no text returned";
                     statusEl.textContent = 'Transcription complete!';
                 } else {
@@ -211,6 +219,13 @@
                 console.error('Transcription error:', error);
                 transcriptText.textContent = `Error: ${error.message}`;
                 statusEl.textContent = 'Transcription failed';
+            } finally {
+                // Restart wake word detection after transcription completes
+                setTimeout(() => {
+                    startWakeWordDetection();
+                    wakeWordStatus.textContent = 'Listening for wake word...';
+                    wakeWordStatus.className = 'listening';
+                }, 1000);
             }
         }
 
