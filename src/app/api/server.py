@@ -11,8 +11,9 @@ import asyncio
 
 # Local imports
 from src.app.services.transcription_service import TranscriptionService
+from src.app.app_launcher.launcher import app as launcher
 
-app = FastAPI(title="Speech Transcription API", version="1.0.0")
+app = FastAPI(title="Unified Vaakya API", version="1.0.0")
 
 # Add CORS middleware
 app.add_middleware(
@@ -22,6 +23,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include system scanner API under /system/*
+app.mount("/system", launcher)
+
 
 # Initialize the transcription service
 transcription_service = TranscriptionService()
@@ -43,7 +48,7 @@ async def shutdown_event():
 
 @app.get("/")
 async def root():
-    return {"message": "Speech Transcription API is running"}
+    return {"message": "Unified Vaakya API is running"}
 
 @app.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)):
@@ -70,12 +75,10 @@ async def transcribe_audio(audio: UploadFile = File(...)):
                 raise HTTPException(status_code=500, detail="Transcription failed")
                 
         except asyncio.TimeoutError:
-            # Remove the temporary file if an error occurred
             if os.path.exists(temp_filename):
                 os.unlink(temp_filename)
             raise HTTPException(status_code=500, detail="Transcription timeout - audio processing took too long")
         except Exception as e:
-            # Remove the temporary file if an error occurred
             if os.path.exists(temp_filename):
                 os.unlink(temp_filename)
             raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
