@@ -208,3 +208,5 @@ __marimo__/
 
 # extras 
 models/
+
+src/app/app_launcher/apps_cache.json

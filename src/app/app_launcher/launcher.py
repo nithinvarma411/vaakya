@@ -12,7 +12,7 @@ app = FastAPI(title="System Scanner API")
 # -----------------------------
 # Config
 # -----------------------------
-CACHE_FILE = "apps_cache.json"
+CACHE_FILE = "src/app/app_launcher/apps_cache.json"
 SEMANTIC_THRESHOLD = 0.30   # tuned for recall; raise if you get false positives
 WEIGHTS = {
     "semantic": 0.65,
