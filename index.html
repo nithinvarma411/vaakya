@@ -326,11 +326,8 @@
             // Stop wake word detection before starting recording
             stopWakeWordDetection();
             
-            setTimeout(() => {
-                startRecording();
-                startSound.currentTime = 0;
-                startSound.play().catch(e => console.log('Audio play failed:', e));
-            }, 500);
+            // Trigger the same functionality as clicking the start recording button
+            startBtn.click();
         }
 
         function initVoiceActivityDetection() {
