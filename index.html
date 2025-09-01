@@ -135,6 +135,18 @@
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
+        let silenceTimer = null;
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let scriptProcessor = null;
+        let silenceStartTime = null;
+        let recordingStream = null;
+        let vadInitialized = false;
+        const SILENCE_THRESHOLD = 15; // Increased threshold for better detection
+        const SILENCE_DURATION = 1500; // 1.5 seconds of silence
+        const MIN_RECORDING_DURATION = 500; // Minimum recording time before allowing stop
+        let recordingStartTime = null;
 
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
@@ -144,43 +156,100 @@
         async function startRecording() {
             try {
                 console.log('startRecording called');
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                
-                mediaRecorder.ondataavailable = event => {
-                    console.log('ondataavailable event fired');
-                    audioChunks.push(event.data);
+                recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Initialize audio context for VAD
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(recordingStream);
+                scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+
+                analyser.smoothingTimeConstant = 0.8;
+                analyser.fftSize = 1024;
+
+                microphone.connect(analyser);
+                analyser.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+
+                scriptProcessor.onaudioprocess = function() {
+                    try {
+                        const array = new Uint8Array(analyser.frequencyBinCount);
+                        analyser.getByteFrequencyData(array);
+                        let values = 0;
+
+                        // Calculate RMS (Root Mean Square) for better voice detection
+                        for (let i = 0; i < array.length; i++) {
+                            values += array[i] * array[i];
+                        }
+
+                        const average = Math.sqrt(values / array.length);
+
+                        if (average > SILENCE_THRESHOLD) {
+                            // Voice detected
+                            if (!isRecording) {
+                                console.log('Voice detected, starting recording');
+                                startMediaRecorder();
+                            }
+                            // Reset silence timer
+                            if (silenceTimer) {
+                                clearTimeout(silenceTimer);
+                                silenceTimer = null;
+                            }
+                            silenceStartTime = null;
+                        } else {
+                            // Silence detected
+                            if (isRecording && !silenceStartTime) {
+                                // Only start silence timer if we've been recording for minimum duration
+                                if (recordingStartTime && (Date.now() - recordingStartTime) > MIN_RECORDING_DURATION) {
+                                    silenceStartTime = Date.now();
+                                    silenceTimer = setTimeout(() => {
+                                        console.log('Silence timeout reached, stopping recording');
+                                        stopRecording();
+                                    }, SILENCE_DURATION);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error in VAD processing:', error);
+                    }
                 };
-                
-                mediaRecorder.onstop = async () => {
-                    console.log('mediaRecorder stopped');
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    await sendAudioForTranscription(audioBlob);
-                    stream.getTracks().forEach(track => track.stop());
-                };
-                
-                mediaRecorder.start();
-                console.log('mediaRecorder started');
-                isRecording = true;
+
+                isRecording = false; // Will be set to true when voice is detected
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
-                statusEl.textContent = 'Recording... Speak now';
-                statusEl.className = 'recording';
-                transcriptText.textContent = 'Listening...';
-                
-                setTimeout(() => {
-                    if (isRecording) {
-                        console.log('Timeout reached, stopping recording');
-                        stopRecording();
-                    }
-                }, 5000);
-                
+                statusEl.textContent = 'Listening for voice...';
+                statusEl.className = 'listening';
+                transcriptText.textContent = 'Waiting for speech...';
+
             } catch (error) {
                 console.error('Error accessing microphone:', error);
                 statusEl.textContent = 'Error: Could not access microphone';
                 statusEl.className = '';
             }
+        }
+
+        function startMediaRecorder() {
+            mediaRecorder = new MediaRecorder(recordingStream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                console.log('ondataavailable event fired');
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                console.log('mediaRecorder stopped');
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                await sendAudioForTranscription(audioBlob);
+                // Don't stop the stream here as VAD is still running
+            };
+
+            mediaRecorder.start();
+            console.log('mediaRecorder started');
+            isRecording = true;
+            statusEl.textContent = 'Recording... Speak now';
+            statusEl.className = 'recording';
+            transcriptText.textContent = 'Listening...';
         }
 
         function stopRecording() {
@@ -192,6 +261,35 @@
                 stopBtn.disabled = true;
                 statusEl.textContent = 'Processing audio...';
                 statusEl.className = '';
+
+                // Clean up VAD resources
+                if (scriptProcessor) {
+                    scriptProcessor.disconnect();
+                    scriptProcessor = null;
+                }
+                if (analyser) {
+                    analyser.disconnect();
+                    analyser = null;
+                }
+                if (microphone) {
+                    microphone.disconnect();
+                    microphone = null;
+                }
+                if (audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                }
+                if (recordingStream) {
+                    recordingStream.getTracks().forEach(track => track.stop());
+                    recordingStream = null;
+                }
+
+                // Clear any pending silence timer
+                if (silenceTimer) {
+                    clearTimeout(silenceTimer);
+                    silenceTimer = null;
+                }
+                silenceStartTime = null;
             }
         }
 
@@ -330,52 +428,13 @@
             startBtn.click();
         }
 
-        function initVoiceActivityDetection() {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ audio: true })
-                    .then(function(stream) {
-                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        const analyser = audioContext.createAnalyser();
-                        const microphone = audioContext.createMediaStreamSource(stream);
-                        const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
 
-                        analyser.smoothingTimeConstant = 0.8;
-                        analyser.fftSize = 1024;
-
-                        microphone.connect(analyser);
-                        analyser.connect(scriptProcessor);
-                        scriptProcessor.connect(audioContext.destination);
-
-                        scriptProcessor.onaudioprocess = function() {
-                            const array = new Uint8Array(analyser.frequencyBinCount);
-                            analyser.getByteFrequencyData(array);
-                            let values = 0;
-
-                            for (let i = 0; i < array.length; i++) {
-                                values += array[i];
-                            }
-
-                            const average = values / array.length;
-                            
-                            if (average > 10) {
-                                soundIndicator.style.display = 'inline-block';
-                            } else {
-                                soundIndicator.style.display = 'none';
-                            }
-                        };
-                    })
-                    .catch(function(err) {
-                        console.error('Voice activity detection error:', err);
-                    });
-            }
-        }
 
         startBtn.addEventListener('click', startRecording);
         stopBtn.addEventListener('click', stopRecording);
 
         window.addEventListener('load', function() {
             initWakeWordDetection();
-            initVoiceActivityDetection();
         });
     </script>
 </body>
