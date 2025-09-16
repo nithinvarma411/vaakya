@@ -64,7 +64,7 @@ class TranscriptionService:
             print(f"Transcribing file: {file_path}")
             # Transcribe the audio file using faster-whisper
             # The base model is multilingual and will auto-detect language
-            segments, info = self.model.transcribe(file_path, beam_size=5)
+            segments, info = self.model.transcribe(file_path, beam_size=5,language="en")
             # Collect all segments into a single transcription
             transcription = " ".join([segment.text for segment in segments])
             print(f"Transcription completed: {transcription}")

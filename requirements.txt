@@ -7,3 +7,9 @@ faster-whisper>=1.0.0
 ctranslate2>=4.0.0
 numpy>=1.21.0
 ffmpeg-python>=0.2.0
+pvporcupine
+sounddevice 
+numpy 
+requests 
+pyttsx3
+python-dotenv
