@@ -25,6 +25,12 @@ from .model_utils import ModelDownloader
 from .qwen_parser import QwenToolCallParser
 from .operations import AppOperations, FileOperations, WebOperations
 
+# Import transcription service
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+from src.app.services.transcription_service import TranscriptionService
+
 log = logging.getLogger(__name__)
 
 class WorkingAgent(kani.Kani):
@@ -73,10 +79,31 @@ class WorkingAgent(kani.Kani):
         system_info = platform.system()
         
         # Initialize with wrapped engine and operations as functions
-        super().__init__(engine)
+        system_prompt = """You are a helpful AI assistant with the ability to perform system operations. You have access to the following capabilities:
+
+1. **Application Control**: You can launch, open, or start any application on the system (Calculator, Chrome, Safari, Terminal, etc.)
+2. **File Operations**: You can create, read, delete files and folders, and list directory contents
+3. **Web Search**: You can search the web for information, news, images, and videos
+4. **Audio Transcription**: You can transcribe audio files to text
+
+When users ask you to perform any of these tasks, you should use your available functions to help them. You are NOT limited to providing information only - you can take real actions on the system.
+
+Examples of what you CAN and SHOULD do:
+- "open Chrome" → Use launch_app function
+- "search for news" → Use search_web function  
+- "list files" → Use list_directory function
+- "create a file" → Use create_file function
+
+Always try to help users by executing the appropriate function rather than saying you cannot perform the action."""
+
+        super().__init__(engine, system_prompt=system_prompt)
+        
+        # Initialize transcription service
+        self.transcription_service = TranscriptionService()
         
         print(f"✅ WorkingAgent initialized with {model_name} on {system_info}")
         print(f"📁 Operations loaded: App, File, Web")
+        print(f"🎤 Transcription service loaded")
         
         # Discover available apps on startup
         print("🔍 Discovering available applications...")
@@ -224,6 +251,25 @@ class WorkingAgent(kani.Kani):
                 return f"❌ Failed to move file"
         except Exception as e:
             return f"❌ Error moving file: {e}"
+    
+    @ai_function()
+    def transcribe_audio(self, audio_file_path: str) -> str:
+        """Transcribe an audio file to text. Use this to convert speech in audio files to text."""
+        try:
+            # Check if file exists
+            if not os.path.exists(audio_file_path):
+                return f"❌ Audio file not found: {audio_file_path}"
+            
+            # Transcribe the audio file
+            import asyncio
+            transcription = asyncio.run(self.transcription_service.transcribe_file(audio_file_path))
+            
+            if transcription:
+                return f"✅ Transcription completed:\n{transcription}"
+            else:
+                return f"❌ Failed to transcribe audio file: {audio_file_path}"
+        except Exception as e:
+            return f"❌ Error transcribing audio: {e}"
 
 
 # Helper functions for creating and testing the agent
