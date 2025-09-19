@@ -35,7 +35,7 @@ class ModelDownloader:
 
         if model_path.exists():
             print(f"✅ Model already exists: {model_path}")
-            return model_path
+            return model_path  # type: ignore[no-any-return]
 
         print(f"📥 Downloading {model_name} ({model_info['size_mb']}MB)...")
         print(f"📍 URL: {model_info['url']}")
@@ -64,7 +64,7 @@ class ModelDownloader:
             urllib.request.urlretrieve(model_info["url"], model_path, progress_hook)
             print(f"\n✅ Download complete: {model_path}")
 
-            return Path(model_path)
+            return model_path  # type: ignore[no-any-return]
 
         except socket.timeout as e:
             print("\n❌ Download timed out after 30 seconds")
