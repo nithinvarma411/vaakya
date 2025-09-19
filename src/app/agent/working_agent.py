@@ -44,7 +44,7 @@ from src.app.services.transcription_service import TranscriptionService
 log = logging.getLogger(__name__)
 
 
-class WorkingAgent(kani.Kani):
+class WorkingAgent(kani.Kani):  # type: ignore[misc]
     """
     Modular Cross-Platform Agent with platform-aware operations:
     - App Operations (fuzzy search app launching)
@@ -52,7 +52,7 @@ class WorkingAgent(kani.Kani):
     - Web Operations (DuckDuckGo search)
     """
 
-    def __init__(self, model_name: Optional[str] = None):
+    def __init__(self, model_name: Optional[str] = None) -> None:
         # Use default model from settings if none provided
         if model_name is None:
             model_name = settings.model.DEFAULT_MODEL_NAME
@@ -166,7 +166,7 @@ Be helpful and use the appropriate function for each request."""
             print(f"Error during WorkingAgent cleanup: {e}")
 
     # AI Functions using modular operations
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def launch_app(self, app_name: str) -> str:
         """Launch, open, or start an application by name. Use this to open any app like Calculator, Safari, Terminal, etc."""
         try:
@@ -178,7 +178,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error launching app: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def search_web(self, query: str, search_type: str = "web") -> str:
         """Search the web for information. search_type can be 'web', 'news', 'images', or 'videos'."""
         try:
@@ -198,7 +198,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error searching web: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def create_file(self, file_path: str, content: str = "") -> str:
         """Create a new file with optional content."""
         try:
@@ -210,7 +210,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error creating file: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def create_folder(self, folder_path: str) -> str:
         """Create a new folder."""
         try:
@@ -222,7 +222,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error creating folder: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def delete_file(self, file_path: str) -> str:
         """Delete a file."""
         try:
@@ -234,7 +234,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error deleting file: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def delete_folder(self, folder_path: str) -> str:
         """Delete a folder and its contents."""
         try:
@@ -246,7 +246,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error deleting folder: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def list_directory(self, directory_path: str) -> str:
         """List contents of a directory."""
         try:
@@ -258,7 +258,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error listing directory: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def read_file(self, file_path: str) -> str:
         """Read content from a file."""
         try:
@@ -270,7 +270,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error reading file: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def write_file(self, file_path: str, content: str, append: bool = False) -> str:
         """Write content to a file."""
         try:
@@ -283,7 +283,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error writing file: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def copy_file(self, source: str, destination: str) -> str:
         """Copy a file from source to destination."""
         try:
@@ -295,7 +295,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error copying file: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def move_file(self, source: str, destination: str) -> str:
         """Move a file from source to destination."""
         try:
@@ -307,7 +307,7 @@ Be helpful and use the appropriate function for each request."""
         except Exception as e:
             return f"❌ Error moving file: {e}"
 
-    @ai_function()
+    @ai_function()  # type: ignore[misc]
     def transcribe_audio(self, audio_file_path: str) -> str:
         """Transcribe an audio file to text. Use this to convert speech in audio files to text."""
         try:
