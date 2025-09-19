@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 try:
     from ddgs import DDGS
 except ImportError:
-    DDGS = None  # type: ignore[assignment]
+    DDGS = None  # type: ignore[assignment,misc]
 
 from src.app.config.settings import settings
 
@@ -252,7 +252,7 @@ class WebOperations:
                     print(
                         f"✅ Quick answer: {snippet[: self.quick_answer_length]}{'...' if len(snippet) > self.quick_answer_length else ''}"
                     )
-                    return snippet
+                    return snippet[: self.quick_answer_length]  # type: ignore[no-any-return]
 
             print("❌ No quick answer found")
             return None

@@ -8,7 +8,7 @@ function calling format with <tool_call> tags.
 import json
 import logging
 import re
-from typing import List, Tuple
+from typing import Any, AsyncGenerator, List, Tuple
 
 from kani.engines.base import BaseCompletion
 from kani.model_specific.base import BaseToolCallParser
@@ -17,7 +17,7 @@ from kani.models import FunctionCall, ToolCall
 log = logging.getLogger(__name__)
 
 
-class QwenToolCallParser(BaseToolCallParser):
+class QwenToolCallParser(BaseToolCallParser):  # type: ignore[misc]
     """
     Tool calling parser for Qwen models that use XML-based function calling.
 
@@ -29,11 +29,11 @@ class QwenToolCallParser(BaseToolCallParser):
 
     def __init__(
         self,
-        *args,
+        *args: Any,
         tool_call_start_token: str = "<tool_call>",
         tool_call_end_token: str = "</tool_call>",
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(
             *args,
             tool_call_start_token=tool_call_start_token,
@@ -110,7 +110,9 @@ class QwenToolCallParser(BaseToolCallParser):
 
         return cleaned_content, tool_calls
 
-    async def predict(self, messages, functions=None, **hyperparams):
+    async def predict(
+        self, messages: Any, functions: Any = None, **hyperparams: Any
+    ) -> Any:
         """Override predict to handle tool call parsing."""
         completion = await super().predict(messages, functions, **hyperparams)
 
@@ -124,7 +126,9 @@ class QwenToolCallParser(BaseToolCallParser):
 
         return completion
 
-    async def stream(self, messages, functions=None, **hyperparams):
+    async def stream(
+        self, messages: Any, functions: Any = None, **hyperparams: Any
+    ) -> AsyncGenerator[Any, None]:
         """Override stream to handle tool call parsing."""
         # Note: Streaming with tool calls is more complex - for now, just handle basic case
         async for elem in super().stream(messages, functions, **hyperparams):
