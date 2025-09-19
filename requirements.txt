@@ -7,7 +7,8 @@ faster-whisper>=1.0.0
 ctranslate2>=4.0.0
 numpy>=1.21.0
 ffmpeg-python>=0.2.0
-kani[llamacpp]>=1.0.0
+kani[
+kani[cpp]>=1.0.0
 
 # Web search
 ddgs>=2.8.0
@@ -18,3 +19,6 @@ python-levenshtein>=0.12.0
 
 # System utilities
 psutil>=5.9.0
+
+# Testing
+pytest>=7.0.0
