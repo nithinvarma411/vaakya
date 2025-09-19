@@ -19,9 +19,9 @@ from pathlib import Path
 import pytest
 
 # Add the src directory to the path so we can import our modules
-sys.path.append(str(Path(__file__).parent / "src"))
+sys.path.append(str(Path(__file__).parent.parent))
 
-from app.agent.working_agent import create_working_agent
+from src.app.agent.working_agent import create_working_agent
 
 
 @pytest.mark.asyncio

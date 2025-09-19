@@ -89,6 +89,22 @@ class AppOperationsSettings:
     SEARCH_TIMEOUT: float = 5.0
     APP_LAUNCH_TIMEOUT: float = 15.0
 
+    # Linux executable filtering
+    SKIP_EXECUTABLES: ClassVar[List[str]] = [
+        "systemd",
+        "dbus",
+        "update",
+        "install",
+        "config",
+    ]
+
+    # Fuzzy search scoring constants
+    SHORT_APP_NAME_THRESHOLD: int = 6
+    MIN_WORD_LENGTH_FOR_PARTIAL_MATCH: int = 3
+    FUZZY_MATCH_THRESHOLD: int = 70
+    BONUS_APP_NAME_LENGTH: int = 15
+    PENALTY_APP_NAME_LENGTH: int = 30
+
 
 class WebOperationsSettings:
     """Web search operations configuration."""
