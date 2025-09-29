@@ -209,3 +209,47 @@ __marimo__/
 # extras 
 models/
 commit.md
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Datastore files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Data dumps and backups
+*.sql
+*.dump
+*.backup
+*.bak
+
+# Cache and temporary data
+*.cache
+*.tmp
+*.temp
+temp/
+tmp/
+data/
+*.dat
+
+# Session and state files
+*.session
+*.state
+*.lock
+
+# Logs
+logs/
+*.log
+log.txt
+access.log
+error.log
