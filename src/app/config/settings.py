@@ -246,7 +246,7 @@ class Settings:
 
     def get_temp_dir(self) -> Path:
         """Get or create temporary directory."""
-        temp_dir = Path(tempfile.gettempdir()) / self.file_operations.TEMP_DIR_PREFIX
+        temp_dir = Path(tempfile.gettempdir()) / "vaakya_"
         temp_dir.mkdir(exist_ok=True)
         return temp_dir
 

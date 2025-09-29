@@ -3,8 +3,7 @@ Modular Cross-Platform Agent
 
 Uses modular operations system with OS detection and plugin architecture:
 1. App Operations - Cross-platform app launching with fuzzy search
-2. File Operations - File/folder management
-3. Web Operations - Web search without browser
+2. Web Operations - Web search without browser
 
 All operations are modular and platform-aware.
 """
@@ -35,7 +34,8 @@ except ImportError:
 from src.app.config.settings import settings
 
 from .model_utils import ModelDownloader
-from .operations import AppOperations, FileOperations, WebOperations
+from .operations import AppOperations, WebOperations
+from .operations.utilities import UtilityFunctions
 from .qwen_parser import QwenToolCallParser
 
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -48,7 +48,6 @@ class WorkingAgent(kani.Kani):  # type: ignore[misc]
     """
     Modular Cross-Platform Agent with platform-aware operations:
     - App Operations (fuzzy search app launching)
-    - File Operations (file/folder management)
     - Web Operations (DuckDuckGo search)
     """
 
@@ -92,40 +91,42 @@ class WorkingAgent(kani.Kani):  # type: ignore[misc]
 
         # Initialize operations modules
         self.app_ops = AppOperations()
-        self.file_ops = FileOperations()
         self.web_ops = WebOperations()
+        self.utils = UtilityFunctions()
 
         # Get system info for logging
         system_info = platform.system()
 
         # Initialize with wrapped engine and operations as functions
-        system_prompt = """You are a helpful AI assistant with system operation capabilities. You MUST use your available functions when users request actions.
+        system_prompt = f"""You are a helpful AI assistant with system operation capabilities that can perform various tasks on the user's computer. You have access to special functions when needed, but you can also generate appropriate shell commands for system tasks.
 
-**YOUR FUNCTIONS:**
-- launch_app(app_name) - Launch applications
-- search_web(query, search_type) - Search web/news/images/videos
-- create_file(file_path, content) - Create files
-- create_folder(folder_path) - Create folders
-- delete_file(file_path) - Delete files
-- delete_folder(folder_path) - Delete folders
-- list_directory(directory_path) - List directory contents
-- read_file(file_path) - Read file contents
-- write_file(file_path, content, append) - Write to files
-- copy_file(source, destination) - Copy files
-- move_file(source, destination) - Move files
-- transcribe_audio(audio_file_path) - Transcribe audio
+**AVAILABLE FUNCTIONS:**
+- launch_app(app_name): Launch applications by name with fuzzy matching
+- search_web(query, search_type): Search for information (web/news/images/videos)
+- execute_shell_command(command): Execute shell commands safely
+- transcribe_audio(audio_file_path): Convert audio to text
+- locate_application(app_name): Find where an application is installed
+- locate_file_or_folder(name): Find files or folders by name in common locations
 
-**IMPORTANT: Always use functions when users request actions that match these capabilities:**
-- For web searches: "search for X", "find information about Y", "look up Z"
-- For file operations: "list files", "create a file", "show me files", "what's in this folder"
-- For app launching: "open calculator", "launch notepad", "start browser"
+**WHEN TO USE FUNCTIONS:**
+- Use launch_app() when user requests to open apps: "open calculator", "launch browser", etc.
+- Use search_web() for information requests: "search for news", "find recipes", etc.
+- Use transcribe_audio() to convert audio files to text
+- Use locate_application() or locate_file_or_folder() to find files/apps
+- Use execute_shell_command() when you need to run a shell command that matches user's request
 
-**Examples:**
-- User: "list the files here" → Use list_directory function
-- User: "search for Python news" → Use search_web function
-- User: "open calculator" → Use launch_app function
+**OS-SPECIFIC COMMANDS:** 
+You are running on {platform.system()} ({platform.machine()}). Generate appropriate commands:
+- **Linux/macOS**: ls, pwd, cd, cp, mv, rm, cat, echo, grep, find, ps, ping, ifconfig, whoami, clear, mkdir, rmdir
+- **Windows**: dir, echo, cd, copy, move, del, type, findstr, where, tasklist, ping, ipconfig, path, cls, chdir, mkdir, rmdir
 
-Be helpful and use the appropriate function for each request."""
+**GENERAL APPROACH:**
+- For general requests, generate appropriate responses normally
+- When user asks for system actions (file operations, system info, running programs), use your functions or generate appropriate shell commands
+- If a user asks to execute a specific command, use execute_shell_command() with the appropriate command for the OS
+- For file management, app launching, or system information, choose the most appropriate approach
+
+**Remember:** You are an intelligent assistant that can both have normal conversations and perform specific system operations when requested."""
 
         super().__init__(engine, system_prompt=system_prompt)
 
@@ -133,7 +134,7 @@ Be helpful and use the appropriate function for each request."""
         self.transcription_service = TranscriptionService()
 
         print(f"✅ WorkingAgent initialized with {model_name} on {system_info}")
-        print("📁 Operations loaded: App, File, Web")
+        print("📁 Operations loaded: App, Web, Utilities")
         print("🎤 Transcription service loaded")
 
         # Discover available apps on startup
@@ -154,11 +155,11 @@ Be helpful and use the appropriate function for each request."""
             if hasattr(self, "app_ops"):
                 # AppOperations cleanup if needed
                 pass
-            if hasattr(self, "file_ops"):
-                # FileOperations cleanup if needed
-                pass
             if hasattr(self, "web_ops"):
                 # WebOperations cleanup if needed
+                pass
+            if hasattr(self, "utils"):
+                # Utility functions cleanup if needed
                 pass
 
             print("WorkingAgent cleanup completed")
@@ -199,113 +200,16 @@ Be helpful and use the appropriate function for each request."""
             return f"❌ Error searching web: {e}"
 
     @ai_function()  # type: ignore[misc]
-    def create_file(self, file_path: str, content: str = "") -> str:
-        """Create a new file with optional content."""
+    def execute_shell_command(self, command: str) -> str:
+        """Execute a shell command safely."""
         try:
-            success = self.file_ops.create_file(file_path, content)
-            if success:
-                return f"✅ Created file: {file_path}"
+            result = self.utils.execute_shell_command(command)
+            if "error" in result:
+                return f"❌ Error executing command: {result['error']}"
             else:
-                return f"❌ Failed to create file: {file_path}"
+                return f"✅ Command executed:\n{result['stdout']}\nStderr: {result['stderr']}"
         except Exception as e:
-            return f"❌ Error creating file: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def create_folder(self, folder_path: str) -> str:
-        """Create a new folder."""
-        try:
-            success = self.file_ops.create_folder(folder_path)
-            if success:
-                return f"✅ Created folder: {folder_path}"
-            else:
-                return f"❌ Failed to create folder: {folder_path}"
-        except Exception as e:
-            return f"❌ Error creating folder: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def delete_file(self, file_path: str) -> str:
-        """Delete a file."""
-        try:
-            success = self.file_ops.delete_file(file_path)
-            if success:
-                return f"✅ Deleted file: {file_path}"
-            else:
-                return f"❌ Failed to delete file: {file_path}"
-        except Exception as e:
-            return f"❌ Error deleting file: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def delete_folder(self, folder_path: str) -> str:
-        """Delete a folder and its contents."""
-        try:
-            success = self.file_ops.delete_folder(folder_path)
-            if success:
-                return f"✅ Deleted folder: {folder_path}"
-            else:
-                return f"❌ Failed to delete folder: {folder_path}"
-        except Exception as e:
-            return f"❌ Error deleting folder: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def list_directory(self, directory_path: str) -> str:
-        """List contents of a directory."""
-        try:
-            contents = self.file_ops.list_directory(directory_path)
-            if contents is not None:
-                return f"✅ Listed directory: {directory_path}"
-            else:
-                return f"❌ Failed to list directory: {directory_path}"
-        except Exception as e:
-            return f"❌ Error listing directory: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def read_file(self, file_path: str) -> str:
-        """Read content from a file."""
-        try:
-            content = self.file_ops.read_file(file_path)
-            if content is not None:
-                return f"✅ Read file: {file_path}\n\nContent:\n{content}"
-            else:
-                return f"❌ Failed to read file: {file_path}"
-        except Exception as e:
-            return f"❌ Error reading file: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def write_file(self, file_path: str, content: str, append: bool = False) -> str:
-        """Write content to a file."""
-        try:
-            success = self.file_ops.write_file(file_path, content, append)
-            action = "Appended to" if append else "Wrote to"
-            if success:
-                return f"✅ {action} file: {file_path}"
-            else:
-                return f"❌ Failed to write to file: {file_path}"
-        except Exception as e:
-            return f"❌ Error writing file: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def copy_file(self, source: str, destination: str) -> str:
-        """Copy a file from source to destination."""
-        try:
-            success = self.file_ops.copy_file(source, destination)
-            if success:
-                return f"✅ Copied {source} to {destination}"
-            else:
-                return "❌ Failed to copy file"
-        except Exception as e:
-            return f"❌ Error copying file: {e}"
-
-    @ai_function()  # type: ignore[misc]
-    def move_file(self, source: str, destination: str) -> str:
-        """Move a file from source to destination."""
-        try:
-            success = self.file_ops.move_file(source, destination)
-            if success:
-                return f"✅ Moved {source} to {destination}"
-            else:
-                return "❌ Failed to move file"
-        except Exception as e:
-            return f"❌ Error moving file: {e}"
+            return f"❌ Error executing shell command: {e}"
 
     @ai_function()  # type: ignore[misc]
     def transcribe_audio(self, audio_file_path: str) -> str:
@@ -326,6 +230,30 @@ Be helpful and use the appropriate function for each request."""
                 return f"❌ Failed to transcribe audio file: {audio_file_path}"
         except Exception as e:
             return f"❌ Error transcribing audio: {e}"
+
+    @ai_function()  # type: ignore[misc]
+    def locate_application(self, app_name: str) -> str:
+        """Locate the path of an application by name using fuzzy search."""
+        try:
+            app_path = self.utils.locate_app_path(app_name)
+            if app_path:
+                return f"✅ Found {app_name}: {app_path}"
+            else:
+                return f"❌ Could not find application: {app_name}"
+        except Exception as e:
+            return f"❌ Error locating application: {e}"
+
+    @ai_function()  # type: ignore[misc]
+    def locate_file_or_folder(self, name: str) -> str:
+        """Locate a file or folder by name in common system locations."""
+        try:
+            path = self.utils.locate_file_or_folder(name)
+            if path:
+                return f"✅ Found {name}: {path}"
+            else:
+                return f"❌ Could not find file or folder: {name}"
+        except Exception as e:
+            return f"❌ Error locating file or folder: {e}"
 
 
 # Helper functions for creating the agent
