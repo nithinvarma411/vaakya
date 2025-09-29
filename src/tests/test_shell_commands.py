@@ -14,8 +14,8 @@ from typing import Any, List
 
 import pytest
 
-# Add the src directory to the path so we can import our modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add the root directory to the path so we can import our modules
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.app.agent.working_agent import create_working_agent
 
@@ -54,7 +54,7 @@ async def test_shell_command_prompts() -> None:
     shell_command_queries = [
         "list files in current directory",  # Should generate appropriate ls/dir command
         "show current directory path",  # Should use pwd/cd command
-        "create a test directory",  # Should use mkdir command
+        "create a test directory at desktop",  # Should use mkdir command
         "show running processes",  # Should use ps/tasklist command
     ]
 

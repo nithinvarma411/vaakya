@@ -165,6 +165,7 @@ class UtilityFunctions:
                 "clear",
                 "mkdir",
                 "rmdir",
+                "open",  # Added for macOS to open apps and files
             ]
 
         # Parse the command to check if it's allowed
@@ -268,45 +269,82 @@ class UtilityFunctions:
         self, name: str, search_paths: Optional[list[str]] = None
     ) -> Optional[str]:
         """
-        Locate a file or folder by searching through common system paths.
-
+        Simple native search using OS built-in search capabilities like Spotlight.
+        
         Args:
             name (str): Name of the file or folder to locate
-            search_paths (Optional[list]): List of paths to search in (default: common system paths)
-
+            search_paths (Optional[list]): Not used, kept for compatibility
+            
         Returns:
             Optional[str]: Path to the file or folder if found, None otherwise
         """
-        if search_paths is None:
-            search_paths = self._get_default_search_paths()
-
+        import subprocess
+        
         try:
-            # Normalize the name for comparison
-            name_lower = name.lower()
-
-            for base_path in search_paths:
-                if not os.path.exists(base_path):
-                    continue
-
-                # Walk through the directory tree
-                for root, dirs, files in os.walk(base_path):
-                    # Check if the name matches any of the directories
-                    for dir_name in dirs:
-                        if name_lower in dir_name.lower():
-                            full_path = os.path.join(root, dir_name)
-                            return str(full_path)
-
-                    # Check if the name matches any of the files
-                    for file_name in files:
-                        if name_lower in file_name.lower():
-                            full_path = os.path.join(root, file_name)
-                            return str(full_path)
-
-                    # Limit depth to prevent excessive searching
-                    if root[len(base_path) :].count(os.sep) >= self.MAX_DEPTH:
-                        dirs[:] = []  # Don't recurse deeper into this directory
-
+            if self.system == "darwin":  # macOS - use Spotlight
+                cmd = ["mdfind", "-name", name]
+            elif self.system == "windows":  # Windows - use PowerShell
+                cmd = ["powershell", "-Command", f"Get-ChildItem -Path C:\\ -Name '*{name}*' -Recurse -Directory | Select-Object -First 10"]
+            else:  # Linux - use locate or find
+                # Try locate first (faster)
+                try:
+                    cmd = ["locate", "-i", f"*{name}*"]
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+                    if result.returncode == 0 and result.stdout.strip():
+                        paths = result.stdout.strip().split('\n')
+                        # Filter for directories that look like projects
+                        for path in paths[:10]:
+                            if os.path.isdir(path) and name.lower() in os.path.basename(path).lower():
+                                return path
+                except:
+                    pass
+                
+                # Fallback to find
+                cmd = ["find", "/home", "-type", "d", "-iname", f"*{name}*", "-maxdepth", "4"]
+            
+            # Execute the search command
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0 and result.stdout.strip():
+                paths = result.stdout.strip().split('\n')
+                
+                # Filter and return the best match
+                for path in paths[:10]:  # Check first 10 results
+                    if os.path.isdir(path):
+                        # Prioritize exact matches and project directories
+                        basename = os.path.basename(path).lower()
+                        if name.lower() == basename or name.lower() in basename:
+                            # Check if it's a project directory
+                            if self._is_simple_project(path):
+                                print(f"✅ Found project: {path}")
+                                return path
+                
+                # If no project found, return first directory match
+                for path in paths[:5]:
+                    if os.path.isdir(path) and name.lower() in os.path.basename(path).lower():
+                        print(f"✅ Found directory: {path}")
+                        return path
+            
+            print(f"❌ No results found for: {name}")
+            return None
+            
+        except subprocess.TimeoutExpired:
+            print(f"⏰ Search timed out for: {name}")
+            return None
         except Exception as e:
-            print(f"Error searching for {name}: {e}")
+            print(f"❌ Search error: {e}")
+            return None
 
-        return None
+    def _is_simple_project(self, path: str) -> bool:
+        """Simple check if directory is a project."""
+        if not os.path.isdir(path):
+            return False
+        
+        # Quick check for common project files
+        project_files = ['.git', 'package.json', 'requirements.txt', 'pyproject.toml', 'README.md']
+        
+        for pfile in project_files:
+            if os.path.exists(os.path.join(path, pfile)):
+                return True
+        
+        return False

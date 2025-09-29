@@ -97,36 +97,32 @@ class WorkingAgent(kani.Kani):  # type: ignore[misc]
         # Get system info for logging
         system_info = platform.system()
 
-        # Initialize with wrapped engine and operations as functions
-        system_prompt = f"""You are a helpful AI assistant with system operation capabilities that can perform various tasks on the user's computer. You have access to special functions when needed, but you can also generate appropriate shell commands for system tasks.
+                # Initialize with wrapped engine and operations as functions
+        system_prompt = f"""You COMPLETE TASKS by calling functions until DONE!
 
-**AVAILABLE FUNCTIONS:**
-- launch_app(app_name): Launch applications by name with fuzzy matching
-- search_web(query, search_type): Search for information (web/news/images/videos)
-- execute_shell_command(command): Execute shell commands safely
+- search_web(query, search_type): Search for information  
+- execute_shell_command(command): Execute shell commands - USE FOR: ls, pwd, mkdir, ps, etc.
+- locate_file_or_folder(name): SMART search for files/folders (searches project locations, finds Git repos)
+- locate_application(app_name): Find where an app is installed
 - transcribe_audio(audio_file_path): Convert audio to text
-- locate_application(app_name): Find where an application is installed
-- locate_file_or_folder(name): Find files or folders by name in common locations
 
-**WHEN TO USE FUNCTIONS:**
-- Use launch_app() when user requests to open apps: "open calculator", "launch browser", etc.
-- Use search_web() for information requests: "search for news", "find recipes", etc.
-- Use transcribe_audio() to convert audio files to text
-- Use locate_application() or locate_file_or_folder() to find files/apps
-- Use execute_shell_command() when you need to run a shell command that matches user's request
+SHELL COMMAND TRIGGERS - USE execute_shell_command() for:
+- "list files" → execute_shell_command("ls -la")
+- "current directory" → execute_shell_command("pwd") 
+- "create directory" → execute_shell_command("mkdir dirname")
+- "running processes" → execute_shell_command("ps aux")
+- "show files" → execute_shell_command("ls")
+- Any command-like request → USE SHELL COMMANDS!
 
-**OS-SPECIFIC COMMANDS:** 
-You are running on {platform.system()} ({platform.machine()}). Generate appropriate commands:
-- **Linux/macOS**: ls, pwd, cd, cp, mv, rm, cat, echo, grep, find, ps, ping, ifconfig, whoami, clear, mkdir, rmdir
-- **Windows**: dir, echo, cd, copy, move, del, type, findstr, where, tasklist, ping, ipconfig, path, cls, chdir, mkdir, rmdir
+For "open X in Y" requests:
+1. locate_file_or_folder("X") → get path
+2. locate_application("Y") → get app
+3. execute_shell_command('open -a Y "/exact/path"')
 
-**GENERAL APPROACH:**
-- For general requests, generate appropriate responses normally
-- When user asks for system actions (file operations, system info, running programs), use your functions or generate appropriate shell commands
-- If a user asks to execute a specific command, use execute_shell_command() with the appropriate command for the OS
-- For file management, app launching, or system information, choose the most appropriate approach
+Always use EXACT path from locate_file_or_folder result!
+Put paths with spaces in single quotes in the command!
 
-**Remember:** You are an intelligent assistant that can both have normal conversations and perform specific system operations when requested."""
+OS: {platform.system()} ({platform.machine()})"""
 
         super().__init__(engine, system_prompt=system_prompt)
 
@@ -167,18 +163,6 @@ You are running on {platform.system()} ({platform.machine()}). Generate appropri
             print(f"Error during WorkingAgent cleanup: {e}")
 
     # AI Functions using modular operations
-    @ai_function()  # type: ignore[misc]
-    def launch_app(self, app_name: str) -> str:
-        """Launch, open, or start an application by name. Use this to open any app like Calculator, Safari, Terminal, etc."""
-        try:
-            success = self.app_ops.launch_app(app_name)
-            if success:
-                return f"✅ Successfully launched {app_name}"
-            else:
-                return f"❌ Failed to launch {app_name}. App may not be installed or name incorrect."
-        except Exception as e:
-            return f"❌ Error launching app: {e}"
-
     @ai_function()  # type: ignore[misc]
     def search_web(self, query: str, search_type: str = "web") -> str:
         """Search the web for information. search_type can be 'web', 'news', 'images', or 'videos'."""
